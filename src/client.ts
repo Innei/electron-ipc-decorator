@@ -1,8 +1,12 @@
 import type { IpcRenderer } from 'electron'
 
 export function createIpcProxy<IpcServices extends Record<string, any>>(
-  ipc: IpcRenderer,
+  ipc: IpcRenderer | null,
 ): IpcServices | null {
+  if (!ipc) {
+    return null
+  }
+
   return new Proxy({} as IpcServices, {
     get(target, groupName: string) {
       return new Proxy(
@@ -11,7 +15,7 @@ export function createIpcProxy<IpcServices extends Record<string, any>>(
           get(_, methodName: string) {
             return (...args: any[]) => {
               const channel = `${groupName}.${methodName}`
-              return ipc?.invoke(channel, ...args)
+              return ipc.invoke(channel, ...args)
             }
           },
         },
