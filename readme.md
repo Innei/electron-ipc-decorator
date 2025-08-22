@@ -85,7 +85,7 @@ export type IpcServices = MergeIpcService<typeof services>
 ### 3. Create Client Proxy (Renderer Process)
 
 ```typescript
-import { createIpcProxy } from 'electron-ipc-decorator'
+import { createIpcProxy } from 'electron-ipc-decorator/client'
 import type { IpcServices } from './main/services' // Import from main process
 
 // ipcRenderer should be exposed through electron's context bridge

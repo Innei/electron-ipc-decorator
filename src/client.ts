@@ -11,7 +11,7 @@ export function createIpcProxy<IpcServices extends Record<string, any>>(
           get(_, methodName: string) {
             return (...args: any[]) => {
               const channel = `${groupName}.${methodName}`
-              return ipc.invoke(channel, ...args)
+              return ipc?.invoke(channel, ...args)
             }
           },
         },
