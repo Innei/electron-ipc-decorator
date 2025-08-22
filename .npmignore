@@ -1,0 +1,37 @@
+# Source files
+src/
+tsconfig.json
+tsdown.config.ts
+
+# Development files
+.gitignore
+.vscode/
+.idea/
+
+# CI/CD
+.github/
+
+# Tests
+test/
+tests/
+__tests__/
+*.test.*
+*.spec.*
+
+# Linting
+.eslintrc*
+.prettierrc*
+
+# Documentation (except readme.md)
+docs/
+
+# Build cache
+*.tsbuildinfo
+.cache
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

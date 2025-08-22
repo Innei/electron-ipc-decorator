@@ -1,0 +1,66 @@
+{
+  "name": "electron-ipc-decorator",
+  "version": "0.1.0",
+  "description": "A TypeScript-first decorator library that simplifies Electron IPC communication with type safety and automatic proxy generation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "readme.md"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm run build",
+    "release": "bumpp",
+    "release:patch": "bumpp patch",
+    "release:minor": "bumpp minor",
+    "release:major": "bumpp major",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "electron",
+    "ipc",
+    "decorator",
+    "typescript",
+    "type-safe",
+    "proxy",
+    "communication"
+  ],
+  "author": {
+    "name": "Innei",
+    "email": "tukon479@gmail.com",
+    "url": "https://innei.in"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/innei/electron-ipc-decorator#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/innei/electron-ipc-decorator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/innei/electron-ipc-decorator/issues"
+  },
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "bumpp": "^9.7.1",
+    "electron": "37.3.1",
+    "tsdown": "0.14.1",
+    "typescript": "^5.6.3"
+  },
+  "peerDependencies": {
+    "electron": ">=32.0.0"
+  }
+}
