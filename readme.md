@@ -30,9 +30,7 @@ import { app } from 'electron'
 import { IpcService, IpcMethod, IpcContext } from 'electron-ipc-decorator'
 
 export class AppService extends IpcService {
-  constructor() {
-    super('app') // Service group name
-  }
+  static readonly groupName = 'app' // Service group name
 
   @IpcMethod()
   getAppVersion(): string {
