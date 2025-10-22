@@ -1,4 +1,4 @@
-export { IpcMethod, IpcService } from './base'
-export type { IpcContext } from './base'
+export { IpcMethod, IpcService, createServices } from './base'
+export type { IpcContext, IpcServiceConstructor } from './base'
 
 export type { MergeIpcService, ExtractServiceMethods } from './utility'

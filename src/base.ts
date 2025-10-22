@@ -82,8 +82,9 @@ export class IpcHandler {
 // Base class for IPC service groups
 export abstract class IpcService {
   protected handler = IpcHandler.getInstance()
+  static readonly groupName: string
 
-  constructor(protected groupName: string) {
+  constructor() {
     this.registerMethods()
   }
 
@@ -92,12 +93,12 @@ export abstract class IpcService {
     const methods = methodMetadata.get(constructor)
 
     if (methods) {
-      for (const [propertyKey, methodName] of methods) {
+      methods.forEach((methodName, propertyKey) => {
         const method = (this as any)[propertyKey]
         if (typeof method === 'function') {
           this.registerMethod(methodName, method.bind(this))
         }
-      }
+      })
     }
   }
 
@@ -108,7 +109,41 @@ export abstract class IpcService {
       ...args: any[]
     ) => Promise<TOutput> | TOutput,
   ) {
-    const channel = `${this.groupName}.${methodName}`
+    const groupName = (this.constructor as typeof IpcService).groupName
+    const channel = `${groupName}.${methodName}`
     this.handler.registerMethod(channel, handler)
   }
+}
+
+// Service constructor with groupName
+export interface IpcServiceConstructor {
+  new (): IpcService
+  readonly groupName: string
+}
+
+// Create services function that infers types from service constructors
+export function createServices<T extends readonly IpcServiceConstructor[]>(
+  serviceConstructors: T,
+): CreateServicesResult<T> {
+  const services = {} as any
+
+  for (const ServiceConstructor of serviceConstructors) {
+    const instance = new ServiceConstructor()
+    const groupName = ServiceConstructor.groupName
+
+    if (!groupName) {
+      throw new Error(
+        `Service ${ServiceConstructor.name} must define a static readonly groupName property`,
+      )
+    }
+
+    services[groupName] = instance
+  }
+
+  return services
+}
+
+// Helper type for createServices return type
+type CreateServicesResult<T extends readonly IpcServiceConstructor[]> = {
+  [K in T[number] as K['groupName']]: InstanceType<K>
 }

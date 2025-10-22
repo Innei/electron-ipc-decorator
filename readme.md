@@ -30,9 +30,7 @@ import { app } from 'electron'
 import { IpcService, IpcMethod, IpcContext } from 'electron-ipc-decorator'
 
 export class AppService extends IpcService {
-  constructor() {
-    super('app') // Service group name
-  }
+  static readonly groupName = 'app' // Define static group name
 
   @IpcMethod()
   getAppVersion(): string {
@@ -70,13 +68,11 @@ export class AppService extends IpcService {
 ### 2. Initialize Services (Main Process)
 
 ```typescript
-import { MergeIpcService } from 'electron-ipc-decorator'
+import { createServices, MergeIpcService } from 'electron-ipc-decorator'
+import { AppService } from './app-service'
 
-// Initialize all services
-export const services = {
-  app: new AppService(),
-  // Add more services as needed
-}
+// Create services with automatic type inference
+export const services = createServices([AppService])
 
 // Generate type definition for all services
 export type IpcServices = MergeIpcService<typeof services>
@@ -120,7 +116,7 @@ const searchResult = await ipcServices.app.search({
 Marks a method as an IPC endpoint.
 
 ```typescript
-@IpcMethod() // Channel: "groupName.methodName"
+@IpcMethod()
 someMethod() { }
 ```
 
@@ -132,7 +128,7 @@ Base class for creating IPC service groups.
 
 ```typescript
 abstract class IpcService {
-  constructor(protected groupName: string)
+  static readonly groupName: string // Must be defined by subclasses
 }
 ```
 
@@ -148,6 +144,27 @@ interface IpcContext {
 ```
 
 ### Functions
+
+#### `createServices<T>(serviceConstructors: T): ServicesResult<T>`
+
+Creates services from an array of service constructors with automatic type inference. Each service class must define a static `groupName` property.
+
+```typescript
+// Define services
+class AppService extends IpcService {
+  static readonly groupName = 'app'
+  // methods...
+}
+
+class UserService extends IpcService {
+  static readonly groupName = 'user'
+  // methods...
+}
+
+// Create services with type safety
+const services = createServices([AppService, UserService])
+// Type is: { app: AppService, user: UserService }
+```
 
 #### `createIpcProxy<T>(ipcRenderer: IpcRenderer): T`
 
@@ -186,6 +203,45 @@ someMethod(context: IpcContext, param1: string, param2: number): string {
 // Renderer process usage (auto-generated type)
 ipcServices.group.someMethod(param1: string, param2: number): Promise<string>
 ```
+
+## Migration Guide
+
+### From Constructor-based to Static groupName
+
+If you're upgrading from a version that used constructor-based group names, here's how to migrate:
+
+**Old way:**
+
+```typescript
+export class AppService extends IpcService {
+  constructor() {
+    super('app') // Group name in constructor
+  }
+}
+
+// Manual service object creation
+export const services = {
+  app: new AppService(),
+}
+```
+
+**New way (recommended):**
+
+```typescript
+export class AppService extends IpcService {
+  static readonly groupName = 'app' // Static group name
+}
+
+// Automatic service creation with type safety
+export const services = createServices([AppService])
+```
+
+**Benefits of the new approach:**
+
+- **Type Safety**: Prevents mismatch between service keys and group names
+- **Auto-completion**: Full IntelliSense support for service methods
+- **Runtime Safety**: Compile-time errors if `groupName` is missing
+- **Simpler**: No need to manually maintain service object keys
 
 ## Advanced Usage
 
