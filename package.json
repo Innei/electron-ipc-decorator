@@ -1,6 +1,6 @@
 {
   "name": "electron-ipc-decorator",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "A TypeScript-first decorator library that simplifies Electron IPC communication with type safety and automatic proxy generation",
   "type": "module",
   "main": "./dist/index.js",
@@ -29,7 +29,9 @@
     "release:patch": "bumpp patch",
     "release:minor": "bumpp minor",
     "release:major": "bumpp major",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "electron",
@@ -59,10 +61,12 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "4.0.15",
     "bumpp": "^9.7.1",
     "electron": "37.3.1",
     "tsdown": "0.14.1",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.0.15"
   },
   "peerDependencies": {
     "electron": ">=32.0.0"

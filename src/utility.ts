@@ -1,13 +1,8 @@
-import type { IpcContext } from './base'
-
-// Extract method signatures from service class, removing context parameter
+// Extract method signatures from service class
 export type ExtractServiceMethods<T> = {
   [K in keyof T as T[K] extends (...args: any[]) => any
     ? K
-    : never]: T[K] extends (
-    context: IpcContext,
-    ...args: infer Args
-  ) => infer Output
+    : never]: T[K] extends (...args: infer Args) => infer Output
     ? Args extends []
       ? () => AlwaysPromise<Output>
       : Args extends [infer Input]

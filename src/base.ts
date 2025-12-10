@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import type { IpcMainInvokeEvent, WebContents } from 'electron'
 import { ipcMain } from 'electron'
 
@@ -5,6 +6,20 @@ import { ipcMain } from 'electron'
 export interface IpcContext {
   sender: WebContents
   event: IpcMainInvokeEvent
+}
+
+// AsyncLocalStorage for context management
+const contextStorage = new AsyncLocalStorage<IpcContext>()
+
+// Get current IPC context from AsyncLocalStorage
+export function getIpcContext(): IpcContext {
+  const context = contextStorage.getStore()
+  if (!context) {
+    throw new Error(
+      'IPC context is not available. Make sure this is called within an IPC handler.',
+    )
+  }
+  return context
 }
 
 // Metadata storage for decorated methods
@@ -44,10 +59,7 @@ export class IpcHandler {
 
   registerMethod<TOutput>(
     channel: string,
-    handler: (
-      context: IpcContext,
-      ...args: any[]
-    ) => Promise<TOutput> | TOutput,
+    handler: (...args: any[]) => Promise<TOutput> | TOutput,
   ) {
     if (this.registeredChannels.has(channel)) {
       return // Already registered
@@ -64,7 +76,7 @@ export class IpcHandler {
         }
 
         try {
-          return await handler(context, ...args)
+          return await contextStorage.run(context, () => handler(...args))
         } catch (error) {
           console.error(`Error in IPC method ${channel}:`, error)
           throw error
@@ -104,10 +116,7 @@ export abstract class IpcService {
 
   protected registerMethod<TOutput>(
     methodName: string,
-    handler: (
-      context: IpcContext,
-      ...args: any[]
-    ) => Promise<TOutput> | TOutput,
+    handler: (...args: any[]) => Promise<TOutput> | TOutput,
   ) {
     const groupName = (this.constructor as typeof IpcService).groupName
     const channel = `${groupName}.${methodName}`

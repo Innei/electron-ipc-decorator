@@ -1,5 +1,8 @@
 # Electron IPC Decorator
 
+[![npm version](https://badge.fury.io/js/electron-ipc-decorator.svg)](https://www.npmjs.com/package/electron-ipc-decorator)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A TypeScript-first decorator library that simplifies Electron IPC communication with type safety and automatic proxy generation.
 
 ## Features
@@ -10,6 +13,7 @@ A TypeScript-first decorator library that simplifies Electron IPC communication 
 - 📦 **Service Groups**: Organize IPC methods into logical service groups
 - 🛡️ **Error Handling**: Built-in error handling and logging
 - ⚡ **Async Support**: Native support for async/await patterns
+- 🔌 **Context Injection**: AsyncLocalStorage-based context management
 
 ## Installation
 
@@ -27,7 +31,7 @@ yarn add electron-ipc-decorator
 
 ```typescript
 import { app } from 'electron'
-import { IpcService, IpcMethod, IpcContext } from 'electron-ipc-decorator'
+import { IpcService, IpcMethod, getIpcContext } from 'electron-ipc-decorator'
 
 export class AppService extends IpcService {
   static readonly groupName = 'app' // Define static group name
@@ -38,19 +42,17 @@ export class AppService extends IpcService {
   }
 
   @IpcMethod()
-  switchAppLocale(context: IpcContext, locale: string): void {
-    // The first parameter is always IpcContext
-    // Additional parameters follow after context
+  switchAppLocale(locale: string): void {
     i18n.changeLanguage(locale)
     app.commandLine.appendSwitch('lang', locale)
   }
 
   @IpcMethod()
-  async search(
-    context: IpcContext,
-    input: SearchInput,
-  ): Promise<Electron.Result | null> {
-    const { sender: webContents } = context
+  async search(input: SearchInput): Promise<Electron.Result | null> {
+    // Context is automatically injected via AsyncLocalStorage
+    // Access it using getIpcContext() when needed
+    // Get context when needed
+    const { sender: webContents } = getIpcContext()
 
     const { promise, resolve } = Promise.withResolvers<Electron.Result | null>()
 
@@ -94,7 +96,7 @@ export const ipcServices = createIpcProxy<IpcServices>(ipcRenderer)
 // Synchronous methods
 const version = await ipcServices.app.getAppVersion()
 
-// Methods with parameters (context is automatically handled)
+// Methods with parameters
 await ipcServices.app.switchAppLocale('en')
 
 // Async methods
@@ -134,13 +136,21 @@ abstract class IpcService {
 
 #### `IpcContext`
 
-Context object passed as the first parameter to all IPC methods.
+Context object available through `getIpcContext()` within IPC method handlers. The context is automatically injected using AsyncLocalStorage.
 
 ```typescript
 interface IpcContext {
   sender: WebContents // The WebContents that sent the request
   event: IpcMainInvokeEvent // The original IPC event
 }
+```
+
+#### `getIpcContext()`
+
+Retrieves the current IPC context from AsyncLocalStorage. Must be called within an IPC method handler.
+
+```typescript
+function getIpcContext(): IpcContext
 ```
 
 ### Functions
@@ -180,14 +190,14 @@ Merges multiple service instances into a single type definition.
 
 Extracts and transforms service methods for client-side usage, automatically:
 
-- Removes the `IpcContext` parameter
+- Preserves all method parameters
 - Wraps return types in `Promise<T>`
 
 ## Important Notes
 
 ### Method Signatures
 
-1. **Context Parameter**: The first parameter of every IPC method must be `IpcContext`
+1. **Context Access**: Access IPC context using `getIpcContext()` within method handlers when needed
 2. **Return Types**: All methods return `Promise<T>` on the client side, even if they're synchronous on the server
 3. **Error Handling**: Errors are automatically propagated from main to renderer process
 
@@ -196,13 +206,70 @@ Extracts and transforms service methods for client-side usage, automatically:
 ```typescript
 // Main process method signature
 @IpcMethod()
-someMethod(context: IpcContext, param1: string, param2: number): string {
+someMethod(param1: string, param2: number): string {
+  const context = getIpcContext() // Get context when needed
   // Implementation
 }
 
 // Renderer process usage (auto-generated type)
 ipcServices.group.someMethod(param1: string, param2: number): Promise<string>
 ```
+
+## Breaking Changes in v1.0.0
+
+### 🚨 Context Parameter Removed
+
+Version 1.0.0 introduces a breaking change in how IPC context is accessed. The `context` parameter has been removed from all IPC method signatures in favor of AsyncLocalStorage-based context injection.
+
+#### Migration Steps
+
+**Before (v0.x):**
+
+```typescript
+import { IpcService, IpcMethod, IpcContext } from 'electron-ipc-decorator'
+
+export class AppService extends IpcService {
+  static readonly groupName = 'app'
+
+  @IpcMethod()
+  someMethod(context: IpcContext, param: string): string {
+    const { sender } = context
+    // Use context...
+    return 'result'
+  }
+}
+```
+
+**After (v1.0.0):**
+
+```typescript
+import { IpcService, IpcMethod, getIpcContext } from 'electron-ipc-decorator'
+
+export class AppService extends IpcService {
+  static readonly groupName = 'app'
+
+  @IpcMethod()
+  someMethod(param: string): string {
+    const { sender } = getIpcContext() // Get context when needed
+    // Use context...
+    return 'result'
+  }
+}
+```
+
+#### Benefits of the New Approach
+
+- **Cleaner API**: Method signatures match their actual purpose without boilerplate
+- **On-Demand Context**: Only retrieve context when you actually need it
+- **Better Type Inference**: Automatic type extraction works more accurately
+- **Promise Chain Context**: Context is preserved throughout async operations via AsyncLocalStorage
+
+#### Update Checklist
+
+1. Remove `IpcContext` parameter from all `@IpcMethod()` decorated methods
+2. Import and use `getIpcContext()` when you need to access the context
+3. Update your type definitions (the types will now automatically match your method signatures)
+4. No changes needed on the renderer side - the API remains the same
 
 ## Migration Guide
 
@@ -251,7 +318,7 @@ Errors thrown in main process methods are automatically caught and re-thrown in 
 
 ```typescript
 @IpcMethod()
-riskyOperation(context: IpcContext): string {
+riskyOperation(): string {
   throw new Error("Something went wrong")
 }
 
@@ -267,12 +334,27 @@ try {
 
 ```typescript
 @IpcMethod()
-sendNotification(context: IpcContext, message: string): void {
-  const { sender } = context
+sendNotification(message: string): void {
+  const { sender } = getIpcContext()
 
   // Send data back to the specific renderer
   sender.send('notification', { message, timestamp: Date.now() })
 }
+```
+
+## Testing
+
+This project maintains 100% test coverage. To run tests:
+
+```bash
+# Run tests
+pnpm test
+
+# Run tests with coverage
+pnpm test:coverage
+
+# Run tests in watch mode
+pnpm test:watch
 ```
 
 ## TypeScript Configuration
