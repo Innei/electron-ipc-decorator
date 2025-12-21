@@ -9,4 +9,5 @@ export default defineConfig({
   sourcemap: true,
   target: 'node18',
   external: ['electron'],
+  fixedExtension: false,
 })
