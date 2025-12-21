@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A TypeScript-first decorator library that simplifies Electron IPC communication with type safety and automatic proxy generation",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -14,6 +14,12 @@
     "./client": {
       "import": "./dist/client.js",
       "require": "./dist/client.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "*": ["./dist/*", "./*"]
     }
   },
   "files": [
