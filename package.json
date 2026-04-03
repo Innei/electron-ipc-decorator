@@ -63,7 +63,7 @@
   "devDependencies": {
     "@vitest/coverage-v8": "4.0.15",
     "bumpp": "^9.7.1",
-    "electron": "37.3.1",
+    "electron": "39.8.5",
     "tsdown": "0.14.1",
     "typescript": "^5.6.3",
     "vitest": "^4.0.15"
