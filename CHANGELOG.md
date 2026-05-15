@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-05-15
+
+### Fixed
+
+- **Broken type resolution**: The published `1.0.0` declaration files were emitted with content-hashed names (e.g. `index-07qxEjCM.d.ts`) that did not match the `types`/`exports` entries in `package.json`, so `IpcService` and other exports resolved as `any` in consumer projects. Upgraded `tsdown` so declarations are emitted with stable names, and added explicit `types` conditions to the `exports` map.
+
 ## [1.0.0] - 2025-12-10
 
 ### 🚨 Breaking Changes
