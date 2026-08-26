@@ -7,19 +7,25 @@ export function createIpcProxy<IpcServices extends Record<string, any>>(
     return null
   }
 
+  const cache = new Map<string, {}>()
+
   return new Proxy({} as IpcServices, {
     get(target, groupName: string) {
-      return new Proxy(
-        {},
-        {
+      let proxy = cache.get(groupName)
+
+      if (!proxy) {
+        proxy = new Proxy({}, {
           get(_, methodName: string) {
             return (...args: any[]) => {
               const channel = `${groupName}.${methodName}`
               return ipc.invoke(channel, ...args)
             }
           },
-        },
-      )
+        })
+        cache.set(groupName, proxy)
+      }
+
+      return proxy
     },
   })
 }
